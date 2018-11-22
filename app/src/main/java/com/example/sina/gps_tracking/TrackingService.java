@@ -1,47 +1,21 @@
 package com.example.sina.gps_tracking;
 
-import android.Manifest;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.Service;
+import android.app.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.IBinder;
-import android.support.annotation.RequiresApi;
-import android.support.v4.content.ContextCompat;
-import android.util.Log;
-
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-
-import static android.content.ContentValues.TAG;
 
 public class TrackingService extends Service {
     public TrackingService() {
@@ -56,7 +30,6 @@ public class TrackingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        loginToFirebase();
         buildNotification();
     }
 
@@ -109,80 +82,29 @@ public class TrackingService extends Service {
         }
     };
 
-    private void loginToFirebase() {
-
-        String email = getString(R.string.test_email);
-        String password = getString(R.string.test_password);
-
-        FirebaseAuth.getInstance().signInWithEmailAndPassword(
-                email, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(Task<AuthResult> task) {
-                if (task.isSuccessful()) {
-                    requestLocationUpdates();
-                } else {
-                    Log.d(TAG, "Firebase authentication failed");
-                }
-            }
-        });
-    }
-
-    private void requestLocationUpdates() {
-        LocationRequest request = new LocationRequest();
-
-        request.setInterval(10000);
-
-        request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(this);
-        final String path = getString(R.string.firebase_path);
-        int permission = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-
-        if (permission == PackageManager.PERMISSION_GRANTED) {
-
-            client.requestLocationUpdates(request, new LocationCallback() {
-                @Override
-                public void onLocationResult(LocationResult locationResult) {
-
-                    //DatabaseReference ref = FirebaseDatabase.getInstance().getReference(path);
-                    Location location = locationResult.getLastLocation();
-
-
-
-                    if (location != null) {
-
-                        //ref.setValue(location);
-                        new HttpRequestTask().execute(location);
-
-                    }
-                }
-            }, null);
-        }
-    }
-
-    private class HttpRequestTask extends AsyncTask<Location, String, HttpResponse>{
+    private class HttpRequestTask extends AsyncTask<Location, String, HttpResponse> {
 
         @Override
         protected HttpResponse doInBackground(Location... locations) {
             HttpPost postRequest = new HttpPost("https://gps-locator-esipe.herokuapp.com/location/");
             StringEntity entity = null;
             try {
-                 entity = new StringEntity(locationToJson(locations[0]));
+                entity = new StringEntity(locationToJson(locations[0]));
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
             postRequest.setEntity(entity);
             postRequest.setHeader("Content-Type", "application/json");
             AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
-            try{
+            try {
                 return client.execute(postRequest);
-            }catch(IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             return null;
         }
 
-        private String locationToJson(Location location){
+        private String locationToJson(Location location) {
             StringBuilder sb = new StringBuilder();
             sb.append("{");
 
