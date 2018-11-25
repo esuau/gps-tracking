@@ -29,10 +29,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".TrackingService"
-            android:enabled="true"
-            android:exported="true"/>
     </application>
 
 </manifest>
